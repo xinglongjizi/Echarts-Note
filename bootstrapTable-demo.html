@@ -1,0 +1,166 @@
+<script>
+
+var peopleOptions;
+// 人口列表加载
+
+    peopleOptions = {
+            method : "POST", // 使用get请求到服务器获取数据
+            url : path + "/api/information/people/getList", // 获取数据的地址
+            contentType : "application/x-www-form-urlencoded",// 重要否则POST会报错
+            striped : false, // 表格显示条纹
+            pagination : true, // 启动分页
+            pageSize : 10, // 每页显示的记录数
+            pageNumber : 1, // 当前第几页
+            pageList : [ 10, 20, 50 ], // 记录数可选列表
+            uniqueId : "id",
+            showColumns : false, // 显示下拉框勾选要显示的列
+            showToggle : false, // 显示 切换试图（table/card）按钮
+            clickToSelect : false, // 点击可选
+            singleSelect : false, // 禁止多选
+            maintainSelected : true, // 在点击分页按钮或搜索按钮时，将记住checkbox的选择项
+            sortable : true, // 禁止所有列的排序
+            sidePagination : "server", // 表示服务端请求 后台分页
+            toolbar : "#toolbar",// 指明自定义的toolbar
+            queryParamsType : "undefined",
+            queryParams : function queryParams(params) {
+                var param = {
+                    pageNumber : params.pageNumber,
+                    pageSize : params.pageSize,
+                    orgId : ztreeId,
+                    nodeId : ztreeId,
+                    citizenName : $("#fullname").val().trim(),
+                    sex : $("#sex").val(),
+                    age : $("#age").val().trim(),
+                    identityCode : $("#idCard").val().trim(),
+                    cellPhone : $("#isMobile").val().trim(),
+                    adress : $("#adress").val().trim(),
+                };
+                return param;
+            },
+            onLoadSuccess : function() {} // 加载成功时执行
+            responseHandler : function(res) { // 格式化数据
+                console.log(res);
+                if (res.data.total != undefined)
+                    tmp = {
+                        total : res.data.total,
+                        rows : res.data.rows
+                    };
+                if (res.data.total == undefined)
+                    tmp = {
+                        total : res.data.length,
+                        rows : res.data
+                    };
+                return tmp;
+            },
+            columns : [ {
+                checkbox : true,
+                title : '全选',
+                valign : 'middle'
+            }, {
+                title : '序号',
+                field : 'number',
+                width : '40px',
+                align : 'center',
+                valign : 'middle',
+                formatter : indexFormatter
+            }, {
+                title : '姓名',
+                field : 'citizenName',
+                align : 'center',
+                valign : 'middle',
+            },  {
+                title : '年龄',
+                field : 'age',
+                align : 'center',
+                width : 28,
+                valign : 'middle',
+                formatter : ageFormatter
+            }, {
+                title : '性别',
+                field : 'sex',
+                width : 28,
+                align : 'center',
+                valign : 'middle',
+            },{
+                title : '身份证号',
+                field : 'identityCode',
+                align : 'center',
+                valign : 'middle',
+            }, {
+                title : '民族',
+                field : 'nation',
+                align : 'center',
+                valign : 'middle',
+            } ]
+        };
+
+
+    var colObj = {
+        //...
+    };
+
+    if( select_milestone == "0" ){
+         peopleOptions.columns.push(colObj);
+    }
+    $table = $("#table").bootstrapTable(peopleOptions);
+
+
+
+
+
+//动态获取列：
+function getColumns() {
+    // 加载动态表格
+    $.ajax({
+        url : path + "api/information/people/getLableColumn?ztreeId=" + ztreeId,
+        type : 'get',
+        dataType : "json",
+        async : false,
+        success : function(returnValue) {
+            // 未查询到相应的列，展示默认列
+            if (returnValue.retCode == "0") {
+                //没查到列的时候把之前的列再给它
+                myColumns = $table.bootstrapTable('getOptions').columns[0];
+            } else {
+                // 异步获取要动态生成的列
+                var arr = returnValue.data;
+                $.each(arr, function(i, item) {
+                    myColumns.push({
+                        "field" : item.labelColumnCode,
+                        "title" : item.labelColumnName,
+                        "hide" : true,
+                        "align" : 'center',
+                        "valign" : 'middle'
+                    });
+                });
+            }
+            console.log(myColumns);
+            return myColumns;
+        }
+    });
+}
+
+//刷新列表：
+ $table.bootstrapTable(
+                  "refreshOptions",
+                  {
+                    url : path + "/api/peopledataInfo/getPeopleInfoList", // 获取数据的地址
+                    columns : myColumns,
+
+                  }
+          );
+
+
+
+
+//iled字段应该与最后查询出的列表中返回的json数据中的key保持一致，不然取不到值。
+
+//bootstrap的table提供了两个刷新的方法，一个refresh，一个refreshOptions，前者只是刷新当前表格，后者会将表格中的组件全部更新一遍，因为我们替换了url和columns，所以需要调用后者
+
+// 显示和隐藏列接口 第二个参数列的field值
+$('#tableOrderRealItems').bootstrapTable('showColumn', 'ShopName');
+$('#tableOrderRealItems').bootstrapTable('hideColumn', 'GoodsId');
+
+
+
+</script>
